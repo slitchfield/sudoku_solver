@@ -100,7 +100,7 @@ func (b *Board) Print() {
 			// Iterate over all the cells in that row
 			for _, cell := range row {
 
-				if cell.PossCount() != 1 {
+				if cell.PossCount() > 1 {
 					if cell.Contains(i*3 + 1) {
 						fmt.Printf("%d ", i*3+1)
 					} else {
@@ -118,7 +118,29 @@ func (b *Board) Print() {
 					} else {
 						fmt.Printf(" │")
 					}
-				} else {
+				} else if cell.PossCount() <= 0 {
+          badbg := color.New(color.BgRed).PrintfFunc()
+
+					if cell.Contains(i*3 + 1) {
+						badbg("%d ", i*3+1)
+					} else {
+						badbg("  ")
+					}
+
+					if cell.Contains(i*3 + 2) {
+						badbg("%d ", i*3+2)
+					} else {
+						badbg("  ")
+					}
+
+					if cell.Contains(i*3 + 3) {
+						badbg("%d", i*3+3)
+					} else {
+						badbg(" ")
+					}
+					fmt.Printf("│")
+
+        } else {
 					bg := color.New(color.BgGreen).Add(color.FgRed).PrintfFunc()
 
 					if cell.Contains(i*3 + 1) {

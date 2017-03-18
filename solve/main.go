@@ -6,6 +6,38 @@ import "github.com/slitchfield/sudoku_solver/simpletech"
 import "os"
 import "fmt"
 import "github.com/fatih/color"
+import "time"
+
+func solve(b *board.Board) {
+
+  start_time := time.Now()
+
+  for ;; {
+    simpletech.ResolvePoss(b)
+    simpletech.ElimLastRemainingSub(b)
+    simpletech.ResolvePoss(b)
+    simpletech.ElimLastRemainingRow(b)
+    simpletech.ResolvePoss(b)
+    simpletech.ElimLastRemainingCol(b)
+
+		if b.CheckIfSolved() {
+			success := color.New(color.BgGreen).Add(color.FgRed).PrintfFunc()
+			success("Solved it!")
+			fmt.Printf("\n")
+			b.Print()
+			break
+		}
+
+    if time.Since(start_time).Seconds() > 1 {
+      failure := color.New(color.BgRed).Add(color.FgGreen).PrintfFunc()
+      failure("Could not solve it :(")
+      fmt.Printf("\n")
+      b.Print()
+      break
+    }
+  }
+
+}
 
 func main() {
 
@@ -15,31 +47,10 @@ func main() {
 
 	logging.Trace.Printf("Reading in board from %s", filename)
 	myBoard := board.BoardFromCSV(filename)
-	myBoard.Solved = false
-	myBoard.Dimension = 9
 
 	logging.Trace.Printf("Beginning solving!")
 	myBoard.Print()
 
-	for i := 0; i < 5; i++ {
-		simpletech.ResolvePoss(myBoard)
+  solve(myBoard)
 
-		simpletech.ElimLastRemainingSub(myBoard)
-
-		simpletech.ResolvePoss(myBoard)
-
-		simpletech.ElimLastRemainingRow(myBoard)
-
-		simpletech.ResolvePoss(myBoard)
-
-		simpletech.ElimLastRemainingCol(myBoard)
-
-		if myBoard.CheckIfSolved() {
-			success := color.New(color.BgGreen).Add(color.FgRed).PrintfFunc()
-			success("Solved it!")
-			fmt.Printf("\n")
-			myBoard.Print()
-			break
-		}
-	}
 }
