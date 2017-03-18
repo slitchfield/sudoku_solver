@@ -4,6 +4,8 @@ import "github.com/slitchfield/sudoku_solver/board"
 import "github.com/slitchfield/sudoku_solver/logging"
 import "github.com/slitchfield/sudoku_solver/simpletech"
 import "os"
+import "fmt"
+import "github.com/fatih/color"
 
 func main() {
 
@@ -19,15 +21,25 @@ func main() {
     logging.Trace.Printf("Beginning solving!")
     myBoard.Print()
 
-    logging.Trace.Printf("Eliminating possibilities in subgrid!")
-    simpletech.NaiveElimSub(myBoard)
-    myBoard.Print()
+    for i := 0; i < 5; i++ {
+        simpletech.ResolvePoss(myBoard)
 
-    logging.Trace.Printf("Eliminating poss in rows!")
-    simpletech.NaiveElimRow(myBoard)
-    myBoard.Print()
+        simpletech.ElimLastRemainingSub(myBoard)
 
-    logging.Trace.Printf("Eliminating poss in cols!")
-    simpletech.NaiveElimCol(myBoard)
-    myBoard.Print()
+        simpletech.ResolvePoss(myBoard)
+
+        simpletech.ElimLastRemainingRow(myBoard)
+
+        simpletech.ResolvePoss(myBoard)
+        
+        simpletech.ElimLastRemainingCol(myBoard)
+
+        if myBoard.CheckIfSolved() {
+            success := color.New(color.BgGreen).Add(color.FgRed).PrintfFunc()
+            success("Solved it!")
+            fmt.Printf("\n")
+            myBoard.Print()
+            break
+        }
+    }
 }

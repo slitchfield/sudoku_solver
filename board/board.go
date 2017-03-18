@@ -7,10 +7,11 @@ import (
     "fmt"
     "strconv"
     "github.com/slitchfield/sudoku_solver/logging"
+    "github.com/fatih/color"
 )
 
 type Cell struct {
-    Poss []int
+    Poss []bool
 }
 
 type Board struct {
@@ -20,45 +21,63 @@ type Board struct {
 }
 
 func (c *Cell) Contains(i int) bool {
+    return c.Poss[i-1]
+}
 
-    for _, curr := range c.Poss {
-        if curr == i {
-            return true
-        }
+func (c *Cell) PossCount() int {
+    
+    return_val := 0
+
+    for _, test := range c.Poss {
+        if test { return_val += 1 }
     }
 
-    return false
+    return return_val
 }
 
 func (c *Cell) OnlyContains(i int) bool {
 
-    if len(c.Poss) == 1 && c.Contains(i) {
+    if (c.PossCount() == 1) && c.Contains(i) {
         return true
     }
     
     return false
 }
 
-func (c *Cell) RemovePoss(i int) {
+func (c *Cell) GetDefiniteVal() int {
 
-    if i == 9 {
-        fmt.Printf("Trying to remove %d from possibilities.\n", i)
-        fmt.Print(c.Poss)
-        fmt.Print("\n")
+    if c.PossCount() != 1 {
+        logging.Error.Printf("Tried to call GetDefiniteVal on cell with no definite val!")
+        return 0
     }
-    for index, curr := range c.Poss {
-        if curr == i {
-            // Delete this index!
-            if index == 8 {
-                fmt.Println("Doing the dangerous thing")
-                c.Poss = c.Poss[:8]
-            } else {
-                c.Poss = append(c.Poss[:index], c.Poss[index+1:]...)
+
+    for i, test := range c.Poss {
+        if test {
+            return i + 1
+        }        
+    }
+
+    logging.Error.Printf("Found no definite value!")
+    return 0
+}
+
+func (c *Cell) SetDefiniteVal(i int) {
+
+    for idx, test := range c.Poss {
+        if idx == i-1 {
+            if !test {
+                logging.Error.Printf("Tried to set definite value to something we can't be!")
             }
-            break
+        } else {
+            c.Poss[idx] = false
         }
     }
-    if i == 9 { fmt.Print(c.Poss); fmt.Print("\n") }
+
+}
+
+func (c *Cell) RemovePoss(i int) {
+
+    c.Poss[i-1] = false
 
 }
 
@@ -80,24 +99,46 @@ func (b *Board) Print() {
             // Iterate over all the cells in that row
             for _, cell := range row {
 
-                if cell.Contains(i*3+1) {
-                    fmt.Printf("%d ", i*3+1)
-                } else {
-                    fmt.Printf("  ")
-                }
+                if cell.PossCount() != 1 {
+                    if cell.Contains(i*3+1) {
+                        fmt.Printf("%d ", i*3+1)
+                    } else {
+                        fmt.Printf("  ")
+                    }
 
-                if cell.Contains(i*3+2) {
-                    fmt.Printf("%d ", i*3+2)
+                    if cell.Contains(i*3+2) {
+                        fmt.Printf("%d ", i*3+2)
+                    } else {
+                        fmt.Printf("  ")
+                    }
+      
+                    if cell.Contains(i*3+3) {
+                        fmt.Printf("%d│", i*3+3)
+                    } else {
+                        fmt.Printf(" │")
+                    }
                 } else {
-                    fmt.Printf("  ")
-                }
-  
-                if cell.Contains(i*3+3) {
-                    fmt.Printf("%d│", i*3+3)
-                } else {
-                    fmt.Printf(" │")
-                }
+                    bg := color.New(color.BgGreen).Add(color.FgRed).PrintfFunc()
 
+                    if cell.Contains(i*3+1) {
+                        bg("%d ", i*3+1)
+                    } else {
+                        bg("  ")
+                    }
+
+                    if cell.Contains(i*3+2) {
+                        bg("%d ", i*3+2)
+                    } else {
+                        bg("  ")
+                    }
+      
+                    if cell.Contains(i*3+3) {
+                        bg("%d", i*3+3)
+                    } else {
+                        bg(" ")
+                    }
+                    fmt.Printf("│")
+                }
             }
             fmt.Print("\n")
 
@@ -109,6 +150,19 @@ func (b *Board) Print() {
     }
 
     fmt.Print(footer)
+}
+
+func (b *Board) CheckIfSolved() bool {
+
+    for _, row := range b.Board {
+        for _, cell := range row {
+            if cell.PossCount() != 1 {
+                return false
+            }
+        }
+    }
+    
+    return true
 }
 
 func BoardFromCSV(filename string) *Board {
@@ -154,9 +208,15 @@ func BoardFromCSV(filename string) *Board {
                 // If there's actually a number in the board, it's the only possibility
                 // Otherwise, anything is possible
                 if val != 0 {
-                    return_board.Board[row_index][col_index].Poss = []int{val}
+                    // Make the Possibility slice, and set only val true
+                    return_board.Board[row_index][col_index].Poss = make([]bool, 9) 
+                    return_board.Board[row_index][col_index].Poss[val-1] = true
                 } else {
-                    return_board.Board[row_index][col_index].Poss = []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
+                    // Make the Possibility slice, and set all values possible
+                    return_board.Board[row_index][col_index].Poss = make([]bool, 9)
+                    for i, _ := range return_board.Board[row_index][col_index].Poss {
+                        return_board.Board[row_index][col_index].Poss[i] = true
+                    }
                 }
             }
         }
